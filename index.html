@@ -117,6 +117,35 @@
   function esc(s) {
     return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
+function setUrlParams(params) {
+  const url = new URL(window.location.href);
+  Object.entries(params).forEach(([k,v]) => {
+    if (v === "" || v === null || v === undefined) url.searchParams.delete(k);
+    else url.searchParams.set(k, v);
+  });
+  window.history.replaceState({}, "", url.toString());
+}
+
+function loadFromUrlParams() {
+  const url = new URL(window.location.href);
+  const sp = url.searchParams;
+
+  // MAUDE
+  if (sp.get("maude_kw") !== null) document.getElementById("maudeKeyword").value = sp.get("maude_kw");
+  if (sp.get("maude_from") !== null) document.getElementById("maudeDateFrom").value = sp.get("maude_from");
+  if (sp.get("maude_to") !== null) document.getElementById("maudeDateTo").value = sp.get("maude_to");
+  if (sp.get("maude_limit") !== null) document.getElementById("maudeLimit").value = sp.get("maude_limit");
+  if (sp.get("maude_count") !== null) document.getElementById("maudeCount").value = sp.get("maude_count");
+
+  // RECALL
+  if (sp.get("recall_field") !== null) document.getElementById("recallField").value = sp.get("recall_field");
+  if (sp.get("recall_val") !== null) document.getElementById("recallValue").value = sp.get("recall_val");
+  if (sp.get("recall_limit") !== null) document.getElementById("recallLimit").value = sp.get("recall_limit");
+  if (sp.get("recall_count") !== null) document.getElementById("recallCount").value = sp.get("recall_count");
+}
+
+// Run once when the page loads
+window.addEventListener("DOMContentLoaded", loadFromUrlParams);
 
   function buildTable(rows, columns) {
     if (!rows || rows.length === 0) return "<div class='muted'>No results returned.</div>";
@@ -173,6 +202,13 @@
     document.getElementById("maudeError").textContent = "";
     document.getElementById("maudeOut").innerHTML = "";
     try {
+          setUrlParams({
+      maude_kw: document.getElementById("maudeKeyword").value.trim(),
+      maude_from: document.getElementById("maudeDateFrom").value.trim(),
+      maude_to: document.getElementById("maudeDateTo").value.trim(),
+      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
+      maude_count: document.getElementById("maudeCount").value.trim()
+    });
       const url = maudeSearchUrl(false);
       setMeta("maudeMeta", url);
       const data = await fetchJson(url);
@@ -198,6 +234,13 @@
     document.getElementById("maudeError").textContent = "";
     document.getElementById("maudeOut").innerHTML = "";
     try {
+          setUrlParams({
+      maude_kw: document.getElementById("maudeKeyword").value.trim(),
+      maude_from: document.getElementById("maudeDateFrom").value.trim(),
+      maude_to: document.getElementById("maudeDateTo").value.trim(),
+      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
+      maude_count: document.getElementById("maudeCount").value.trim()
+    });
       const url = maudeSearchUrl(true);
       setMeta("maudeMeta", url);
       const data = await fetchJson(url);
@@ -238,6 +281,13 @@
     document.getElementById("recallError").textContent = "";
     document.getElementById("recallOut").innerHTML = "";
     try {
+          setUrlParams({
+      maude_kw: document.getElementById("maudeKeyword").value.trim(),
+      maude_from: document.getElementById("maudeDateFrom").value.trim(),
+      maude_to: document.getElementById("maudeDateTo").value.trim(),
+      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
+      maude_count: document.getElementById("maudeCount").value.trim()
+    });
       const url = recallSearchUrl(false);
       setMeta("recallMeta", url);
       const data = await fetchJson(url);
@@ -263,6 +313,13 @@
     document.getElementById("recallError").textContent = "";
     document.getElementById("recallOut").innerHTML = "";
     try {
+          setUrlParams({
+      maude_kw: document.getElementById("maudeKeyword").value.trim(),
+      maude_from: document.getElementById("maudeDateFrom").value.trim(),
+      maude_to: document.getElementById("maudeDateTo").value.trim(),
+      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
+      maude_count: document.getElementById("maudeCount").value.trim()
+    });
       const url = recallSearchUrl(true);
       setMeta("recallMeta", url);
       const data = await fetchJson(url);
