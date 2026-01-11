@@ -144,30 +144,36 @@ function loadFromUrlParams() {
   if (sp.get("recall_count") !== null) document.getElementById("recallCount").value = sp.get("recall_count");
 }
 
-// Run once when the page loads
-window.addEventListener("DOMContentLoaded", loadFromUrlParams);
+window.addEventListener("DOMContentLoaded", () => {
+  loadFromUrlParams();
 
-  function buildTable(rows, columns) {
-    if (!rows || rows.length === 0) return "<div class='muted'>No results returned.</div>";
-    let html = "<table><thead><tr>";
-    for (const c of columns) html += `<th>${esc(c)}</th>`;
-    html += "</tr></thead><tbody>";
-    for (const r of rows) {
-      html += "<tr>";
-      for (const c of columns) html += `<td>${esc(r[c])}</td>`;
-      html += "</tr>";
-    }
-    html += "</tbody></table>";
-    return html;
-  }
+  // Update URL whenever inputs change (no need to click Run)
+  const ids = [
+    "maudeKeyword","maudeDateFrom","maudeDateTo","maudeLimit","maudeCount",
+    "recallField","recallValue","recallLimit","recallCount"
+  ];
 
-  async function fetchJson(url) {
-    const r = await fetch(url);
-    const data = await r.json();
-    if (!r.ok) {
-      const msg = (data && data.error && data.error.message) ? data.error.message : JSON.stringify(data, null, 2);
-      throw new Error(msg);
-    }
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener("change", () => {
+      setUrlParams({
+        maude_kw: document.getElementById("maudeKeyword").value.trim(),
+        maude_from: document.getElementById("maudeDateFrom").value.trim(),
+        maude_to: document.getElementById("maudeDateTo").value.trim(),
+        maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
+        maude_count: document.getElementById("maudeCount").value.trim(),
+
+        recall_field: document.getElementById("recallField").value.trim(),
+        recall_val: document.getElementById("recallValue").value.trim(),
+        recall_limit: String(document.getElementById("recallLimit").value || "").trim(),
+        recall_count: document.getElementById("recallCount").value.trim()
+      });
+    });
+  });
+});
+
     return data;
   }
 
