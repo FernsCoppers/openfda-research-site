@@ -19,14 +19,14 @@
     .muted { color: #666; }
     .error { color: #b00020; white-space: pre-wrap; }
     .small { font-size: 0.92rem; }
-    .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius: 999px; margin-left:6px; }
     code { background:#f6f6f6; padding:2px 6px; border-radius:6px; }
   </style>
 </head>
 <body>
   <h1>openFDA Research Site</h1>
   <div class="note small">
-    This site helps explore public openFDA datasets for research and awareness purposes. MAUDE reports and recall records have limitations (incomplete, biased, underreporting; not validated for causality).
+    This site helps explore public openFDA datasets for research and awareness purposes.
+    MAUDE reports and recall records have limitations (incomplete, biased, underreporting; not validated for causality).
   </div>
 
   <div class="card">
@@ -114,40 +114,55 @@
   </div>
 
 <script>
+  // ---------- Helpers ----------
   function esc(s) {
-    return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    return String(s ?? "").replace(/[&<>"']/g, m => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+    ));
   }
-function setUrlParams(params) {
-  const url = new URL(window.location.href);
-  Object.entries(params).forEach(([k,v]) => {
-    if (v === "" || v === null || v === undefined) url.searchParams.delete(k);
-    else url.searchParams.set(k, v);
-  });
-  window.history.replaceState({}, "", url.toString());
-}
 
-function loadFromUrlParams() {
-  const url = new URL(window.location.href);
-  const sp = url.searchParams;
+  function buildTable(rows, columns) {
+    if (!rows || rows.length === 0) return "<div class='muted'>No results returned.</div>";
+    let html = "<table><thead><tr>";
+    for (const c of columns) html += `<th>${esc(c)}</th>`;
+    html += "</tr></thead><tbody>";
+    for (const r of rows) {
+      html += "<tr>";
+      for (const c of columns) html += `<td>${esc(r[c])}</td>`;
+      html += "</tr>";
+    }
+    html += "</tbody></table>";
+    return html;
+  }
 
-  // MAUDE
-  if (sp.get("maude_kw") !== null) document.getElementById("maudeKeyword").value = sp.get("maude_kw");
-  if (sp.get("maude_from") !== null) document.getElementById("maudeDateFrom").value = sp.get("maude_from");
-  if (sp.get("maude_to") !== null) document.getElementById("maudeDateTo").value = sp.get("maude_to");
-  if (sp.get("maude_limit") !== null) document.getElementById("maudeLimit").value = sp.get("maude_limit");
-  if (sp.get("maude_count") !== null) document.getElementById("maudeCount").value = sp.get("maude_count");
+  async function fetchJson(url) {
+    const r = await fetch(url);
+    const data = await r.json();
+    if (!r.ok) {
+      const msg = (data && data.error && data.error.message)
+        ? data.error.message
+        : JSON.stringify(data, null, 2);
+      throw new Error(msg);
+    }
+    return data;
+  }
 
-  // RECALL
-  if (sp.get("recall_field") !== null) document.getElementById("recallField").value = sp.get("recall_field");
-  if (sp.get("recall_val") !== null) document.getElementById("recallValue").value = sp.get("recall_val");
-  if (sp.get("recall_limit") !== null) document.getElementById("recallLimit").value = sp.get("recall_limit");
-  if (sp.get("recall_count") !== null) document.getElementById("recallCount").value = sp.get("recall_count");
-}
-window.addEventListener("DOMContentLoaded", () => {
-  loadFromUrlParams();
+  function setMeta(elId, url) {
+    document.getElementById(elId).innerHTML = `Query URL: <code>${esc(url)}</code>`;
+  }
 
-  function syncUrlFromFields() {
-    setUrlParams({
+  // ---------- URL state (shareable searches) ----------
+  function setUrlParams(params) {
+    const url = new URL(window.location.href);
+    Object.entries(params).forEach(([k, v]) => {
+      if (v === "" || v === null || v === undefined) url.searchParams.delete(k);
+      else url.searchParams.set(k, v);
+    });
+    window.history.replaceState({}, "", url.toString());
+  }
+
+  function getFieldValues() {
+    return {
       maude_kw: document.getElementById("maudeKeyword").value.trim(),
       maude_from: document.getElementById("maudeDateFrom").value.trim(),
       maude_to: document.getElementById("maudeDateTo").value.trim(),
@@ -158,193 +173,19 @@ window.addEventListener("DOMContentLoaded", () => {
       recall_val: document.getElementById("recallValue").value.trim(),
       recall_limit: String(document.getElementById("recallLimit").value || "").trim(),
       recall_count: document.getElementById("recallCount").value.trim()
-    });
+    };
   }
 
-  // Text/number inputs: update URL as you type
-  const inputIds = ["maudeKeyword","maudeDateFrom","maudeDateTo","maudeLimit","recallValue","recallLimit"];
-  inputIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("input", syncUrlFromFields);
-  });
+  function loadFromUrlParams() {
+    const url = new URL(window.location.href);
+    const sp = url.searchParams;
 
-  // Dropdowns: update URL when selection changes
-  const selectIds = ["maudeCount","recallField","recallCount"];
-  selectIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("change", syncUrlFromFields);
-  });
-});
+    // MAUDE
+    if (sp.get("maude_kw") !== null) document.getElementById("maudeKeyword").value = sp.get("maude_kw");
+    if (sp.get("maude_from") !== null) document.getElementById("maudeDateFrom").value = sp.get("maude_from");
+    if (sp.get("maude_to") !== null) document.getElementById("maudeDateTo").value = sp.get("maude_to");
+    if (sp.get("maude_limit") !== null) document.getElementById("maudeLimit").value = sp.get("maude_limit");
+    if (sp.get("maude_count") !== null) document.getElementById("maudeCount").value = sp.get("maude_count");
 
-    return data;
-  }
-
-  function setMeta(elId, url) {
-    document.getElementById(elId).innerHTML = `Query URL: <code>${esc(url)}</code>`;
-  }
-
-  // --- MAUDE ---
-  function maudeSearchUrl(countMode) {
-    const kw = document.getElementById("maudeKeyword").value.trim();
-    const from = document.getElementById("maudeDateFrom").value.trim();
-    const to = document.getElementById("maudeDateTo").value.trim();
-    const limit = Math.min(Math.max(parseInt(document.getElementById("maudeLimit").value || "10", 10), 1), 100);
-
-    // Build search terms
-    const terms = [];
-    if (kw) terms.push(`device.generic_name:${kw}`);
-    if (from && to) terms.push(`date_received:[${from}+TO+${to}]`);
-
-    const search = terms.length ? `search=${encodeURIComponent(terms.join("+AND+"))}` : "";
-    const base = "https://api.fda.gov/device/event.json";
-
-    if (countMode) {
-      const c = document.getElementById("maudeCount").value;
-      if (!c) throw new Error("Select a count field first (e.g., event_type.exact).");
-      return `${base}?${search}${search ? "&" : ""}count=${encodeURIComponent(c)}`;
-    }
-    return `${base}?${search}${search ? "&" : ""}limit=${limit}`;
-  }
-
-  async function runMaudeSearch() {
-    document.getElementById("maudeError").textContent = "";
-    document.getElementById("maudeOut").innerHTML = "";
-    try {
-          setUrlParams({
-      maude_kw: document.getElementById("maudeKeyword").value.trim(),
-      maude_from: document.getElementById("maudeDateFrom").value.trim(),
-      maude_to: document.getElementById("maudeDateTo").value.trim(),
-      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
-      maude_count: document.getElementById("maudeCount").value.trim()
-    });
-      const url = maudeSearchUrl(false);
-      setMeta("maudeMeta", url);
-      const data = await fetchJson(url);
-
-      const rows = (data.results || []).map(x => ({
-        report_number: x.report_number,
-        date_received: x.date_received,
-        event_type: x.event_type,
-        manufacturer_name: x.manufacturer_name,
-        brand_name: (x.device && x.device[0] && x.device[0].brand_name) ? x.device[0].brand_name : "",
-        generic_name: (x.device && x.device[0] && x.device[0].generic_name) ? x.device[0].generic_name : ""
-      }));
-
-      document.getElementById("maudeOut").innerHTML = buildTable(rows, [
-        "report_number","date_received","event_type","manufacturer_name","brand_name","generic_name"
-      ]);
-    } catch (e) {
-      document.getElementById("maudeError").textContent = e.message;
-    }
-  }
-
-  async function runMaudeCount() {
-    document.getElementById("maudeError").textContent = "";
-    document.getElementById("maudeOut").innerHTML = "";
-    try {
-          setUrlParams({
-      maude_kw: document.getElementById("maudeKeyword").value.trim(),
-      maude_from: document.getElementById("maudeDateFrom").value.trim(),
-      maude_to: document.getElementById("maudeDateTo").value.trim(),
-      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
-      maude_count: document.getElementById("maudeCount").value.trim()
-    });
-      const url = maudeSearchUrl(true);
-      setMeta("maudeMeta", url);
-      const data = await fetchJson(url);
-
-      const rows = (data.results || []).slice(0, 25).map(x => ({
-        term: x.term,
-        count: x.count
-      }));
-
-      document.getElementById("maudeOut").innerHTML =
-        `<div class="muted small">Showing top 25 buckets</div>` + buildTable(rows, ["term","count"]);
-    } catch (e) {
-      document.getElementById("maudeError").textContent = e.message;
-    }
-  }
-
-  // --- RECALLS ---
-  function recallSearchUrl(countMode) {
-    const field = document.getElementById("recallField").value;
-    const val = document.getElementById("recallValue").value.trim();
-    const limit = Math.min(Math.max(parseInt(document.getElementById("recallLimit").value || "10", 10), 1), 100);
-
-    const base = "https://api.fda.gov/device/recall.json";
-
-    if (countMode) {
-      const c = document.getElementById("recallCount").value;
-      if (!c) throw new Error("Select a count field first (e.g., product_code).");
-      return `${base}?count=${encodeURIComponent(c)}`;
-    }
-
-    if (!val) throw new Error("Enter a search value (e.g., FOZ).");
-
-    const search = `search=${encodeURIComponent(`${field}:${val}`)}`;
-    return `${base}?${search}&limit=${limit}`;
-  }
-
-  async function runRecallSearch() {
-    document.getElementById("recallError").textContent = "";
-    document.getElementById("recallOut").innerHTML = "";
-    try {
-          setUrlParams({
-      maude_kw: document.getElementById("maudeKeyword").value.trim(),
-      maude_from: document.getElementById("maudeDateFrom").value.trim(),
-      maude_to: document.getElementById("maudeDateTo").value.trim(),
-      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
-      maude_count: document.getElementById("maudeCount").value.trim()
-    });
-      const url = recallSearchUrl(false);
-      setMeta("recallMeta", url);
-      const data = await fetchJson(url);
-
-      const rows = (data.results || []).map(x => ({
-        recall_number: x.recall_number,
-        product_code: x.product_code,
-        status: x.status,
-        classification: x.classification,
-        recalling_firm: x.recalling_firm,
-        reason_for_recall: x.reason_for_recall
-      }));
-
-      document.getElementById("recallOut").innerHTML = buildTable(rows, [
-        "recall_number","product_code","status","classification","recalling_firm","reason_for_recall"
-      ]);
-    } catch (e) {
-      document.getElementById("recallError").textContent = e.message;
-    }
-  }
-
-  async function runRecallCount() {
-    document.getElementById("recallError").textContent = "";
-    document.getElementById("recallOut").innerHTML = "";
-    try {
-          setUrlParams({
-      maude_kw: document.getElementById("maudeKeyword").value.trim(),
-      maude_from: document.getElementById("maudeDateFrom").value.trim(),
-      maude_to: document.getElementById("maudeDateTo").value.trim(),
-      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
-      maude_count: document.getElementById("maudeCount").value.trim()
-    });
-      const url = recallSearchUrl(true);
-      setMeta("recallMeta", url);
-      const data = await fetchJson(url);
-
-      const rows = (data.results || []).slice(0, 25).map(x => ({
-        term: x.term,
-        count: x.count
-      }));
-
-      document.getElementById("recallOut").innerHTML =
-        `<div class="muted small">Showing top 25 buckets</div>` + buildTable(rows, ["term","count"]);
-    } catch (e) {
-      document.getElementById("recallError").textContent = e.message;
-    }
-  }
-</script>
-</body>
-</html>
+    // RECALL
+    if (sp.get("recall_field") !== null) document.getElementB_
