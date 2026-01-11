@@ -143,34 +143,38 @@ function loadFromUrlParams() {
   if (sp.get("recall_limit") !== null) document.getElementById("recallLimit").value = sp.get("recall_limit");
   if (sp.get("recall_count") !== null) document.getElementById("recallCount").value = sp.get("recall_count");
 }
-
 window.addEventListener("DOMContentLoaded", () => {
   loadFromUrlParams();
 
-  // Update URL whenever inputs change (no need to click Run)
-  const ids = [
-    "maudeKeyword","maudeDateFrom","maudeDateTo","maudeLimit","maudeCount",
-    "recallField","recallValue","recallLimit","recallCount"
-  ];
+  function syncUrlFromFields() {
+    setUrlParams({
+      maude_kw: document.getElementById("maudeKeyword").value.trim(),
+      maude_from: document.getElementById("maudeDateFrom").value.trim(),
+      maude_to: document.getElementById("maudeDateTo").value.trim(),
+      maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
+      maude_count: document.getElementById("maudeCount").value.trim(),
 
-  ids.forEach(id => {
+      recall_field: document.getElementById("recallField").value.trim(),
+      recall_val: document.getElementById("recallValue").value.trim(),
+      recall_limit: String(document.getElementById("recallLimit").value || "").trim(),
+      recall_count: document.getElementById("recallCount").value.trim()
+    });
+  }
+
+  // Text/number inputs: update URL as you type
+  const inputIds = ["maudeKeyword","maudeDateFrom","maudeDateTo","maudeLimit","recallValue","recallLimit"];
+  inputIds.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
+    el.addEventListener("input", syncUrlFromFields);
+  });
 
-    el.addEventListener("change", () => {
-      setUrlParams({
-        maude_kw: document.getElementById("maudeKeyword").value.trim(),
-        maude_from: document.getElementById("maudeDateFrom").value.trim(),
-        maude_to: document.getElementById("maudeDateTo").value.trim(),
-        maude_limit: String(document.getElementById("maudeLimit").value || "").trim(),
-        maude_count: document.getElementById("maudeCount").value.trim(),
-
-        recall_field: document.getElementById("recallField").value.trim(),
-        recall_val: document.getElementById("recallValue").value.trim(),
-        recall_limit: String(document.getElementById("recallLimit").value || "").trim(),
-        recall_count: document.getElementById("recallCount").value.trim()
-      });
-    });
+  // Dropdowns: update URL when selection changes
+  const selectIds = ["maudeCount","recallField","recallCount"];
+  selectIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("change", syncUrlFromFields);
   });
 });
 
